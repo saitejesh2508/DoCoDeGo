@@ -7,6 +7,7 @@ import {
   getBalances,
   getBills,
   getHome,
+  listHomes,
   payShare,
 } from './repository'
 import { errorResponse } from './response'
@@ -31,6 +32,8 @@ app.post('/api/homes', async (c) => {
   if (!name) return errorResponse(c, 422, 'Name must be a non-empty string')
   return c.json(await createHome(c.env.DB, name), 201)
 })
+
+app.get('/api/homes', async (c) => c.json({ homes: await listHomes(c.env.DB) }))
 
 app.get('/api/homes/:homeId', async (c) => {
   const home = await getHome(c.env.DB, c.req.param('homeId'))

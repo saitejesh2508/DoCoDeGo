@@ -1,4 +1,13 @@
-import type { Balance, Bill, BillWithShares, Home, HomeDetails, Member, Share } from './types'
+import type {
+  Balance,
+  Bill,
+  BillWithShares,
+  Home,
+  HomeDetails,
+  HomeSummary,
+  Member,
+  Share,
+} from './types'
 
 type PaymentResult =
   | { kind: 'paid'; share: Share }
@@ -7,6 +16,12 @@ type PaymentResult =
   | { kind: 'conflict' }
 
 type HomeRow = { id: string; name: string }
+type HomeSummaryRow = {
+  id: string
+  name: string
+  member_count: number
+  bill_count: number
+}
 type MemberRow = { id: string; home_id: string; name: string }
 type ShareRow = {
   id: string
@@ -35,6 +50,24 @@ export async function createHome(db: D1Database, name: string): Promise<Home> {
     .bind(home.id, home.name, new Date().toISOString())
     .run()
   return home
+}
+
+export async function listHomes(db: D1Database): Promise<HomeSummary[]> {
+  const result = await db
+    .prepare(
+      `SELECT h.id, h.name,
+              (SELECT COUNT(*) FROM members m WHERE m.home_id = h.id) AS member_count,
+              (SELECT COUNT(*) FROM bills b WHERE b.home_id = h.id) AS bill_count
+       FROM homes h
+       ORDER BY h.created_at DESC, h.id ASC`,
+    )
+    .all<HomeSummaryRow>()
+  return result.results.map((home) => ({
+    id: home.id,
+    name: home.name,
+    memberCount: home.member_count,
+    billCount: home.bill_count,
+  }))
 }
 
 export async function getHome(db: D1Database, homeId: string): Promise<HomeDetails | null> {

@@ -1,5 +1,6 @@
 export type Member = { id: string; homeId: string; name: string }
 export type Home = { id: string; name: string; members: Member[] }
+export type HomeSummary = { id: string; name: string; memberCount: number; billCount: number }
 export type Share = {
   id: string
   memberId: string
@@ -59,6 +60,16 @@ function parseHome(value: unknown): Home {
     id: requiredString(value.id, 'home ID'),
     name: requiredString(value.name, 'home name'),
     members: value.members.map(parseMember),
+  }
+}
+
+function parseHomeSummary(value: unknown): HomeSummary {
+  if (!isRecord(value)) throw new ApiError('The server returned an invalid home.')
+  return {
+    id: requiredString(value.id, 'home ID'),
+    name: requiredString(value.name, 'home name'),
+    memberCount: safeInteger(value.memberCount, 'member count'),
+    billCount: safeInteger(value.billCount, 'bill count'),
   }
 }
 
@@ -161,6 +172,14 @@ function post(path: string, body: unknown): Promise<unknown> {
 }
 
 export const api = {
+  async getHomes(signal?: AbortSignal): Promise<HomeSummary[]> {
+    const result = await request('/api/homes', { signal })
+    if (!isRecord(result) || !Array.isArray(result.homes)) {
+      throw new ApiError('The server returned an invalid home list.')
+    }
+    return result.homes.map(parseHomeSummary)
+  },
+
   async getHome(homeId: string, signal?: AbortSignal): Promise<Home> {
     return parseHome(await request(`/api/homes/${encodeURIComponent(homeId)}`, { signal }))
   },

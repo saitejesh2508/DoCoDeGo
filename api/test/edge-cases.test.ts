@@ -2,6 +2,23 @@ import { describe, expect, it } from 'vitest'
 import { call, createBill, createHome, type Member } from './helpers'
 
 describe('home and bill edge cases', () => {
+  it('lists homes by name with member and bill counts', async () => {
+    const { homeId } = await createHome(['Asha', 'Ben'])
+    await createBill(homeId, 501)
+
+    const result = await call<{
+      homes: Array<{ id: string; name: string; memberCount: number; billCount: number }>
+    }>('GET', '/api/homes')
+
+    expect(result.status).toBe(200)
+    expect(result.body.homes).toContainEqual({
+      id: homeId,
+      name: 'Test home',
+      memberCount: 2,
+      billCount: 1,
+    })
+  })
+
   it('rejects empty names and keeps members in insertion order', async () => {
     const invalid = await call('POST', '/api/homes', { body: { name: '   ' } })
     expect(invalid.status).toBe(422)

@@ -1,4 +1,5 @@
 export type Home = { id: string; name: string }
+export type HomeSummary = { id: string; name: string; memberCount: number; billCount: number }
 export type Member = { id: string; homeId: string; name: string }
 export type Share = {
   id: string

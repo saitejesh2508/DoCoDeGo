@@ -7,19 +7,29 @@ A household bill-splitting app built with Hono on Cloudflare Workers, Cloudflare
 - `api/src/index.ts` defines the Worker routes; `api/src/repository.ts` owns D1 queries, `api/src/types.ts` contains shared response types, and `api/src/validation.ts` handles request validation.
 - `api/src/response.ts` keeps API error responses in the required JSON shape.
 - `api/migrations/` contains the relational D1 schema, foreign keys, checks, indexes, and same-home share trigger.
-- `web/src/api.ts` is the typed, runtime-validated API client. `web/src/routes/index.tsx` provides home, member, bill, balance, and payment flows.
-- The browser stores the last opened home ID locally. Share amounts and totals are persisted as integer cents.
+- `web/src/api.ts` is the typed, runtime-validated API client. `web/src/components/Dashboard.tsx` presents named home cards and the member, bill, balance, and payment flows; the route file stays a thin wrapper.
+- Share amounts and totals are persisted as integer cents.
 
 ## Run locally
 
 Use Node.js 22.12 or newer to run the development and validation commands. Wrangler 4.156 requires Node 22, and Vite 8 requires Node 20.19 or newer. `pnpm dev` checks this requirement before starting either server; `pnpm install` does not run Wrangler type generation. Install dependencies once at the workspace root, then start the Worker and web development server:
+
+If PowerShell still selects an older Node installation, put the Node 22 installation first on `PATH` for the current terminal. For a Node installation under `%APPDATA%\npm\node_modules\node`, run:
+
+```powershell
+$env:Path = "$env:APPDATA\npm\node_modules\node\bin;$env:Path"
+node --version
+pnpm dev
+```
+
+Confirm `node --version` prints `v22.12.0` or newer. For a lasting fix, update your Windows `PATH` or use a Node version manager so the supported version is selected in newly opened terminals.
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Open `http://localhost:5173`. The API listens on `http://localhost:8787`. The development script applies pending D1 migrations to the local database before starting Wrangler. Create a home, add members, and create a bill, or open a home by entering its ID.
+Open `http://localhost:5173`. The API listens on `http://localhost:8787`. The development script applies pending D1 migrations to the local database before starting Wrangler. Create a home, add members, and create a bill, or choose a home by name from the dashboard.
 
 ## API
 
@@ -29,6 +39,7 @@ All errors use `{ "error": "message" }`.
 | ------ | ---------------------------------------- | ---------------------------------------------------------- |
 | `GET`  | `/api/health`                            | Worker health check                                        |
 | `POST` | `/api/homes`                             | Create a home with `{ "name": string }`                    |
+| `GET`  | `/api/homes`                             | List homes with member and bill counts                     |
 | `GET`  | `/api/homes/:homeId`                     | Read a home and its members in join order                  |
 | `POST` | `/api/homes/:homeId/members`             | Add an ordered member                                      |
 | `POST` | `/api/homes/:homeId/bills`               | Create a bill and atomically split its integer-cent amount |

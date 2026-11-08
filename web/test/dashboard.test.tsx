@@ -1,8 +1,9 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Balance, Bill, Home, Share } from '../src/api'
+import type { Balance, Bill, Home, HomeSummary, Share } from '../src/api'
 
 const apiMocks = vi.hoisted(() => ({
+  getHomes: vi.fn(),
   getHome: vi.fn(),
   getBills: vi.fn(),
   getBalances: vi.fn(),
@@ -14,12 +15,18 @@ const apiMocks = vi.hoisted(() => ({
 
 vi.mock('../src/api', () => ({ api: apiMocks }))
 
-import { Dashboard } from '../src/routes/index'
+import { Dashboard } from '../src/components/Dashboard'
 
 const home: Home = {
   id: 'home-1',
   name: 'Test home',
   members: [{ id: 'member-1', homeId: 'home-1', name: 'Asha' }],
+}
+const homeSummary: HomeSummary = {
+  id: 'home-1',
+  name: 'Test home',
+  memberCount: 1,
+  billCount: 1,
 }
 const unpaidShare: Share = {
   id: 'share-1',
@@ -39,9 +46,8 @@ const balances: Balance[] = [{ memberId: 'member-1', name: 'Asha', outstandingCe
 const paidShare: Share = { ...unpaidShare, paidAt: '2026-11-08T10:00:00.000Z' }
 const emptyHome: Home = { ...home, members: [] }
 
-function openHome() {
-  fireEvent.change(screen.getByLabelText('Home ID'), { target: { value: home.id } })
-  fireEvent.click(screen.getByRole('button', { name: 'Open home' }))
+async function openHome() {
+  fireEvent.click(await screen.findByRole('button', { name: `Open ${home.name}` }))
 }
 
 function mockLoadedHome(bills: Bill[] = [unpaidBill]) {
@@ -53,6 +59,7 @@ function mockLoadedHome(bills: Bill[] = [unpaidBill]) {
 beforeEach(() => {
   window.localStorage.clear()
   for (const mock of Object.values(apiMocks)) mock.mockReset()
+  apiMocks.getHomes.mockResolvedValue([homeSummary])
 })
 afterEach(cleanup)
 
@@ -68,12 +75,41 @@ describe('shared home dashboard', () => {
     )
 
     render(<Dashboard />)
-    openHome()
+    await openHome()
     expect(screen.getByText('Loading your home')).toBeTruthy()
     await act(async () => resolveHome?.(emptyHome))
 
     expect(await screen.findByText('No members yet')).toBeTruthy()
     expect(screen.getByText('No bills to split yet')).toBeTruthy()
+  })
+
+  it('shows named home modules and opens the selected home', async () => {
+    mockLoadedHome()
+    render(<Dashboard />)
+
+    expect(await screen.findByRole('heading', { name: home.name })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: `Open ${home.name}` }))
+
+    expect(await screen.findByText('Members & balances')).toBeTruthy()
+    expect(apiMocks.getHome).toHaveBeenCalledWith(home.id, expect.any(AbortSignal))
+    expect(screen.getByRole('button', { name: 'All homes' })).toBeTruthy()
+  })
+
+  it('shows an empty state when no homes exist', async () => {
+    apiMocks.getHomes.mockResolvedValue([])
+    render(<Dashboard />)
+
+    expect(await screen.findByText('No homes yet')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Create home' })).toBeTruthy()
+  })
+
+  it('shows a retry action when loading the home list fails', async () => {
+    apiMocks.getHomes.mockRejectedValueOnce(new Error('Home list unavailable'))
+    render(<Dashboard />)
+
+    expect(await screen.findByText('Home list unavailable')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(apiMocks.getHomes).toHaveBeenCalledTimes(2)
   })
 
   it.each([
@@ -85,9 +121,9 @@ describe('shared home dashboard', () => {
     apiMocks.getBalances.mockResolvedValue([])
 
     render(<Dashboard />)
-    openHome()
+    await openHome()
 
-    expect(await screen.findByText('We couldn’t open this home')).toBeTruthy()
+    expect(await screen.findByText("We couldn't open this home")).toBeTruthy()
     expect(screen.getByText(message)).toBeTruthy()
   })
 
@@ -97,7 +133,7 @@ describe('shared home dashboard', () => {
       .mockRejectedValueOnce(new Error('Payment could not be completed'))
       .mockResolvedValueOnce(paidShare)
     render(<Dashboard />)
-    openHome()
+    await openHome()
 
     const payButton = await screen.findByRole('button', { name: 'Pay share' })
     fireEvent.click(payButton)
@@ -119,7 +155,7 @@ describe('shared home dashboard', () => {
       }),
     )
     render(<Dashboard />)
-    openHome()
+    await openHome()
 
     const payButton = await screen.findByRole('button', { name: 'Pay share' })
     fireEvent.click(payButton)

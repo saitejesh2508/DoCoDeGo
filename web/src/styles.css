@@ -92,15 +92,12 @@ input:focus {
   color: #77758d;
   font-weight: 500;
 }
-.home-switcher {
+.topbar-actions {
   display: flex;
-  gap: 8px;
-  max-width: 400px;
-  width: 100%;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
   margin-left: auto;
-}
-.home-switcher input {
-  min-width: 0;
 }
 .topbar-create {
   flex-shrink: 0;
@@ -565,6 +562,69 @@ h1 {
   color: #9190a1;
   font-size: 11px;
 }
+.home-section {
+  margin-top: 24px;
+}
+.home-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 14px;
+}
+.home-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  padding: 17px;
+}
+.home-card-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 13px;
+  font-size: 15px;
+  font-weight: 800;
+}
+.home-card-copy {
+  min-width: 0;
+  flex: 1;
+}
+.home-card-copy h3 {
+  overflow: hidden;
+  margin: 0 0 5px;
+  color: #35334c;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-card-copy p {
+  margin: 0;
+  color: #9290a1;
+  font-size: 11px;
+}
+.home-card-open {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.homes-empty {
+  padding: 30px 20px;
+  text-align: center;
+}
+.homes-empty .section-icon {
+  margin-bottom: 12px;
+}
+.homes-empty h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+.homes-empty p {
+  margin: 0;
+  color: #9290a1;
+  font-size: 12px;
+}
 .inline-form {
   display: flex;
   gap: 8px;
@@ -714,9 +774,12 @@ h1 {
   .brand {
     margin-right: auto;
   }
-  .home-switcher {
-    order: 3;
-    max-width: none;
+  .topbar-actions {
+    gap: 6px;
+  }
+  .topbar-actions .button {
+    min-height: 37px;
+    padding: 0 10px;
   }
   .topbar-create {
     min-height: 37px;
@@ -727,6 +790,13 @@ h1 {
     flex-direction: column;
     gap: 15px;
     padding: 29px 0 23px;
+  }
+  .home-card {
+    flex-wrap: wrap;
+  }
+  .home-card-open {
+    width: 100%;
+    justify-content: center;
   }
   .home-badge {
     align-self: stretch;
