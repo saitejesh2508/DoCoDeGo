@@ -11,7 +11,7 @@ build/
 .vscode/
 .idea/
 
-# wrangler-generated types — regenerate on `pnpm install` via api/postinstall
+# Optional Wrangler-generated runtime types — regenerate with the cf-typegen script
 api/worker-configuration.d.ts
 
 # Note: web/src/routeTree.gen.ts IS committed so fresh-clone typecheck works.
